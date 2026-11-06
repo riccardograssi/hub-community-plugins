@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PhotoPrism</title>
+  <style>
+    html, body, iframe { margin: 0; height: 100%; width: 100%; border: 0; }
+    body { font-family: sans-serif; }
+    p { padding: 1.5rem; }
+  </style>
+</head>
+<body>
+  <p id="status">Accesso Hub…</p>
+  <script>
+    (function () {
+      var query = new URLSearchParams(location.search);
+      var hash = new URLSearchParams((location.hash || "").replace(/^#/, ""));
+      var token = query.get("sso") || hash.get("sso") || "";
+      var status = document.getElementById("status");
+      if (!token) {
+        status.textContent = "Manca il token SSO di Hub.";
+        return;
+      }
+      sessionStorage.setItem("hub_sso", token);
+      var frame = document.createElement("iframe");
+      frame.src = "/ui/";
+      document.body.textContent = "";
+      document.body.appendChild(frame);
+    })();
+  </script>
+</body>
+</html>

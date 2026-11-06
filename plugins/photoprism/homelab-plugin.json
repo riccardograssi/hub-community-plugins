@@ -14,6 +14,27 @@
     "image": "ghcr.io/riccardograssi/photoprism:hub",
     "containerPort": 2342
   },
-  "clients": [{ "kind": "web", "launchPath": "/" }],
-  "minPlatformVersion": "0.1.0"
+  "clients": [
+    {
+      "kind": "web",
+      "launchPath": "/"
+    },
+    {
+      "kind": "android",
+      "launchPath": "/"
+    },
+    {
+      "kind": "desktop",
+      "launchPath": "/"
+    }
+  ],
+  "minPlatformVersion": "0.1.0",
+  "sso": {
+    "path": "/api/auth/sso",
+    "token": "bearer"
+  },
+  "web": {
+    "image": "ghcr.io/riccardograssi/photoprism:hub-web",
+    "launchPath": "/"
+  }
 }

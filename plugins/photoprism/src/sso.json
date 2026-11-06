@@ -1,0 +1,7 @@
+{
+  "enabled": true,
+  "method": "POST",
+  "path": "/api/auth/sso",
+  "token": "bearer",
+  "scope": ["plugin", "space", "user"]
+}

@@ -12,3 +12,9 @@ paths:
       responses:
         "200":
           description: PhotoPrism status.
+  /api/auth/sso:
+    post:
+      operationId: hubSso
+      responses:
+        "200":
+          description: Session opened from the Hub SSO token for this plugin, space, and user.

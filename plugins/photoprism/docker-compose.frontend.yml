@@ -1,0 +1,9 @@
+services:
+  photoprism-web:
+    image: ghcr.io/riccardograssi/photoprism:hub-web
+    pull_policy: always
+    restart: unless-stopped
+    environment:
+      UPSTREAM: http://photoprism:2342
+    ports:
+      - "${PHOTOPRISM_WEB_PORT:-80}:80"
