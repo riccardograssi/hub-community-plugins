@@ -1,0 +1,19 @@
+{
+  "id": "photoprism",
+  "name": "PhotoPrism",
+  "version": "1.0.0",
+  "description": "Photo library wrapped from the official PhotoPrism image. Hub installs ghcr.io/riccardograssi/photoprism:hub.",
+  "homepage": "https://github.com/photoprism/photoprism",
+  "launchPath": "/",
+  "healthcheck": "/api/v1/status",
+  "apiPrefix": "/api",
+  "compose": {
+    "file": "docker-compose.backend.yml",
+    "service": "photoprism",
+    "officialImage": "photoprism/photoprism:latest",
+    "image": "ghcr.io/riccardograssi/photoprism:hub",
+    "containerPort": 2342
+  },
+  "clients": [{ "kind": "web", "launchPath": "/" }],
+  "minPlatformVersion": "0.1.0"
+}

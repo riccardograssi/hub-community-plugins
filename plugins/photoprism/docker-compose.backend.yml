@@ -1,0 +1,31 @@
+# Hub installs ghcr.io/riccardograssi/photoprism:hub.
+# That image starts from photoprism/photoprism and adds the CLI and MCP server.
+# Originals and the index stay in named volumes.
+
+services:
+  photoprism:
+    image: ghcr.io/riccardograssi/photoprism:${PHOTOPRISM_TAG:-hub}
+    pull_policy: always
+    restart: unless-stopped
+    ports:
+      - "${PHOTOPRISM_PORT:-2342}:2342"
+    volumes:
+      - photoprism-originals:/photoprism/originals
+      - photoprism-storage:/photoprism/storage
+    environment:
+      PHOTOPRISM_ADMIN_USER: ${PHOTOPRISM_ADMIN_USER:-admin}
+      PHOTOPRISM_ADMIN_PASSWORD: ${PHOTOPRISM_ADMIN_PASSWORD:?set PHOTOPRISM_ADMIN_PASSWORD}
+      PHOTOPRISM_SITE_URL: ${PHOTOPRISM_SITE_URL:-http://127.0.0.1:2342/}
+      PHOTOPRISM_DISABLE_TLS: "true"
+      PHOTOPRISM_DISABLE_TENSORFLOW: ${PHOTOPRISM_DISABLE_TENSORFLOW:-true}
+      PHOTOPRISM_DATABASE_DRIVER: sqlite
+    healthcheck:
+      test: ["CMD", "photoprism", "status"]
+      interval: 30s
+      timeout: 15s
+      retries: 8
+      start_period: 40s
+
+volumes:
+  photoprism-originals:
+  photoprism-storage:

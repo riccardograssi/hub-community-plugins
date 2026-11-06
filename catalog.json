@@ -1,0 +1,21 @@
+{
+  "updatedAt": "2026-11-06",
+  "plugins": [
+    {
+      "id": "photoprism",
+      "name": "PhotoPrism",
+      "description": "Photo library wrapped from photoprism/photoprism. Hub installs ghcr.io/riccardograssi/photoprism:hub.",
+      "version": "1.0.0",
+      "homepage": "https://github.com/photoprism/photoprism",
+      "repo": "riccardograssi/hub-community-plugins",
+      "ref": "main",
+      "visibility": "community",
+      "install": {
+        "kind": "compose",
+        "role": "backend",
+        "composeFile": "plugins/photoprism/docker-compose.backend.yml"
+      },
+      "clients": [{ "kind": "web", "launchPath": "/" }]
+    }
+  ]
+}

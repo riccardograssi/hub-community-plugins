@@ -1,0 +1,14 @@
+openapi: 3.0.3
+info:
+  title: PhotoPrism
+  version: 1.0.0
+  description: REST API served by the official PhotoPrism image. A copy of this file is at /opt/opendevtools/openapi.yaml in the install image.
+servers:
+  - url: http://127.0.0.1:2342
+paths:
+  /api/v1/status:
+    get:
+      operationId: status
+      responses:
+        "200":
+          description: PhotoPrism status.
