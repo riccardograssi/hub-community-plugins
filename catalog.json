@@ -1,11 +1,11 @@
 {
-  "updatedAt": "2026-11-06",
+  "updatedAt": "2026-11-16",
   "plugins": [
     {
       "id": "photoprism",
       "name": "PhotoPrism",
       "description": "Photo library wrapped from photoprism/photoprism. Hub installs ghcr.io/riccardograssi/photoprism:hub.",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "homepage": "https://github.com/photoprism/photoprism",
       "repo": "riccardograssi/hub-community-plugins",
       "ref": "main",

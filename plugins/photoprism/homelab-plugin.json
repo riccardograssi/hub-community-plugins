@@ -1,7 +1,7 @@
 {
   "id": "photoprism",
   "name": "PhotoPrism",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Photo library wrapped from the official PhotoPrism image. Hub installs ghcr.io/riccardograssi/photoprism:hub.",
   "homepage": "https://github.com/photoprism/photoprism",
   "launchPath": "/",

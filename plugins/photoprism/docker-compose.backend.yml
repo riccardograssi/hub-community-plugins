@@ -26,6 +26,24 @@ services:
       retries: 8
       start_period: 40s
 
+  photoprism-groups:
+    image: ghcr.io/riccardograssi/photoprism:${PHOTOPRISM_TAG:-hub}
+    pull_policy: always
+    restart: unless-stopped
+    entrypoint: ["python3", "/opt/opendevtools/groups/server.py"]
+    expose:
+      - "8095"
+    volumes:
+      - photoprism-storage:/photoprism/storage
+    environment:
+      PHOTOPRISM_GROUPS_FILE: /photoprism/storage/people-groups.json
+      PHOTOPRISM_UPSTREAM: http://photoprism:2342
+      PHOTOPRISM_ADMIN_USER: ${PHOTOPRISM_ADMIN_USER:-admin}
+      PHOTOPRISM_ADMIN_PASSWORD: ${PHOTOPRISM_ADMIN_PASSWORD:?set PHOTOPRISM_ADMIN_PASSWORD}
+      GROUPS_LISTEN: 0.0.0.0:8095
+    depends_on:
+      - photoprism
+
 volumes:
   photoprism-originals:
   photoprism-storage:

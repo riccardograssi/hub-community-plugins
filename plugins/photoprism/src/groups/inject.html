@@ -1,0 +1,223 @@
+<a id="homelab-people-groups-btn" href="/__hub/people-groups" title="Gruppi di persone">Gruppi</a>
+<style>
+#homelab-people-groups-btn {
+  position: fixed; z-index: 40; left: 4.75rem; bottom: 18px;
+  background: #5e2750; color: #fff; text-decoration: none;
+  font: 600 14px/1.2 system-ui, sans-serif;
+  padding: 10px 14px; border-radius: 999px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.28);
+}
+#homelab-people-groups-btn:hover { filter: brightness(1.08); }
+.is-subject { position: relative; }
+.homelab-person-burger {
+  position: absolute; z-index: 6; top: 8px; right: 8px;
+  width: 34px; height: 34px; border: 0; border-radius: 8px; cursor: pointer;
+  background: rgba(18,21,28,.72); color: #fff;
+  display: flex; align-items: center; justify-content: center; gap: 3px; flex-direction: column;
+  box-shadow: 0 2px 10px rgba(0,0,0,.35);
+}
+.homelab-person-burger span { width: 14px; height: 2px; background: #fff; border-radius: 1px; display: block; }
+#homelab-person-menu {
+  position: fixed; z-index: 80; min-width: 260px; max-width: 320px;
+  background: #1c2230; color: #e8eef8; border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.1); box-shadow: 0 12px 40px rgba(0,0,0,.45);
+  padding: .7rem .75rem .8rem; font: 14px/1.35 system-ui, sans-serif;
+}
+#homelab-person-menu h3 { margin: 0 0 .55rem; font-size: .95rem; font-weight: 650; }
+#homelab-person-menu label { display: flex; gap: .5rem; align-items: flex-start; padding: .28rem 0; cursor: pointer; }
+#homelab-person-menu .muted { color: #8b97ab; font-size: .85rem; }
+#homelab-person-menu .row { display: flex; gap: .4rem; margin-top: .65rem; }
+#homelab-person-menu input[type=text] {
+  flex: 1; min-width: 0; background: #0f131a; color: #e8eef8; border: 1px solid rgba(255,255,255,.12);
+  border-radius: 8px; padding: .4rem .5rem; font: inherit;
+}
+#homelab-person-menu button {
+  background: #5e2750; color: #fff; border: 0; border-radius: 8px; padding: .4rem .65rem;
+  font: 600 13px system-ui; cursor: pointer; white-space: nowrap;
+}
+#homelab-person-menu .err { color: #fca5a5; margin: .4rem 0 0; min-height: 1em; }
+</style>
+<script>
+(function () {
+  if (window.__homelabPersonBurger) return;
+  window.__homelabPersonBurger = true;
+  const api = (path, opts) => fetch(path, Object.assign({ credentials: "same-origin" }, opts || {}));
+
+  function onPeoplePage() {
+    const p = location.pathname || "";
+    if (/\\/people\\/new\\/?$/.test(p)) return false;
+    return /\\/people\\/?$/.test(p) || /\\/library\\/people\\/?$/.test(p);
+  }
+
+  function uidFrom(card) {
+    const parts = String(card.className || "").split(" ");
+    for (let i = 0; i < parts.length; i++) {
+      if (parts[i].indexOf("uid-") === 0) return parts[i].slice(4);
+    }
+    return "";
+  }
+
+  function nameFrom(card) {
+    const title = card.querySelector(".card-title, .v-card-title, .subject-name");
+    if (title && title.textContent.trim()) return title.textContent.trim();
+    const nodes = card.querySelectorAll("div, span, strong, h3");
+    for (let i = 0; i < nodes.length; i++) {
+      const el = nodes[i];
+      if (el.querySelector("div, span, strong")) continue;
+      const t = (el.textContent || "").trim();
+      if (!t || t.length > 80) continue;
+      if (/^contains/i.test(t) || /pictures?/i.test(t) || /foto/i.test(t)) continue;
+      return t;
+    }
+    return (card.getAttribute("title") || "").trim();
+  }
+
+  let menu = null;
+  let openFor = "";
+
+  function closeMenu() {
+    if (menu) menu.remove();
+    menu = null;
+    openFor = "";
+  }
+
+  function placeMenu(btn) {
+    const r = btn.getBoundingClientRect();
+    const w = Math.min(320, window.innerWidth - 16);
+    let left = r.right - w;
+    if (left < 8) left = 8;
+    menu.style.width = w + "px";
+    menu.style.left = left + "px";
+    menu.style.top = (r.bottom + 6) + "px";
+    requestAnimationFrame(() => {
+      const mr = menu.getBoundingClientRect();
+      if (mr.bottom > window.innerHeight - 8) {
+        menu.style.top = Math.max(8, r.top - mr.height - 6) + "px";
+      }
+    });
+  }
+
+  async function saveMembership(uid, name, groupIds, createName) {
+    const r = await api("/__hub/people-groups/api/membership", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ uid: uid, name: name, groupIds: groupIds, createName: createName || "" }),
+    });
+    if (!r.ok) throw new Error("save");
+    return r.json();
+  }
+
+  async function openMenu(btn, uid, name) {
+    closeMenu();
+    openFor = uid;
+    menu = document.createElement("div");
+    menu.id = "homelab-person-menu";
+    menu.innerHTML = "<h3></h3><div class='list muted'>Carico gruppi…</div><p class='err'></p><div class='row'><input type='text' placeholder='Nuovo gruppo…' /><button type='button'>Crea</button></div>";
+    menu.querySelector("h3").textContent = "Gruppi — " + (name || uid);
+    document.body.appendChild(menu);
+    placeMenu(btn);
+    const err = menu.querySelector(".err");
+    const list = menu.querySelector(".list");
+    const input = menu.querySelector("input");
+    const createBtn = menu.querySelector("button");
+    const gR = await api("/__hub/people-groups/api/groups");
+    if (!gR.ok) { list.textContent = "Impossibile leggere i gruppi."; return; }
+    let groups = ((await gR.json()).groups || []).slice();
+    groups.sort((a, b) => (a.name || "").localeCompare(b.name || "", "it", { sensitivity: "base" }));
+
+    function selectedIds() {
+      return Array.from(list.querySelectorAll("input[type=checkbox]:checked")).map((c) => c.value);
+    }
+
+    function renderList() {
+      list.innerHTML = "";
+      list.className = "list";
+      if (!groups.length) {
+        list.className = "list muted";
+        list.textContent = "Nessun gruppo. Creane uno qui sotto.";
+        return;
+      }
+      groups.forEach((g) => {
+        const lab = document.createElement("label");
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.value = g.id;
+        cb.checked = (g.personUids || []).indexOf(uid) >= 0;
+        cb.addEventListener("change", async () => {
+          err.textContent = "";
+          try {
+            const data = await saveMembership(uid, name, selectedIds(), "");
+            groups = data.groups || groups;
+          } catch (e) {
+            cb.checked = !cb.checked;
+            err.textContent = "Salvataggio fallito.";
+          }
+        });
+        lab.appendChild(cb);
+        lab.appendChild(document.createTextNode(" " + (g.name || g.id)));
+        list.appendChild(lab);
+      });
+    }
+
+    renderList();
+    createBtn.onclick = async () => {
+      const n = (input.value || "").trim();
+      if (!n) return;
+      err.textContent = "";
+      try {
+        const data = await saveMembership(uid, name, selectedIds(), n);
+        groups = data.groups || groups;
+        groups.sort((a, b) => (a.name || "").localeCompare(b.name || "", "it", { sensitivity: "base" }));
+        input.value = "";
+        renderList();
+      } catch (e) {
+        err.textContent = "Creazione fallita.";
+      }
+    };
+    input.addEventListener("keydown", (ev) => {
+      if (ev.key === "Enter") { ev.preventDefault(); createBtn.click(); }
+    });
+  }
+
+  function decorate(card) {
+    if (!onPeoplePage()) return;
+    if (card.querySelector(".homelab-person-burger")) return;
+    const uid = uidFrom(card);
+    if (!uid) return;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "homelab-person-burger";
+    btn.title = "Aggiungi a gruppi";
+    btn.setAttribute("aria-label", "Aggiungi a gruppi");
+    btn.innerHTML = "<span></span><span></span><span></span>";
+    btn.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      if (openFor === uid) { closeMenu(); return; }
+      openMenu(btn, uid, nameFrom(card) || uid);
+    });
+    card.appendChild(btn);
+  }
+
+  function scan() {
+    if (!onPeoplePage()) {
+      document.querySelectorAll(".homelab-person-burger").forEach((b) => b.remove());
+      closeMenu();
+      return;
+    }
+    document.querySelectorAll(".is-subject").forEach(decorate);
+  }
+
+  document.addEventListener("click", (ev) => {
+    if (!menu) return;
+    if (menu.contains(ev.target)) return;
+    if (ev.target.closest && ev.target.closest(".homelab-person-burger")) return;
+    closeMenu();
+  });
+  window.addEventListener("scroll", closeMenu, true);
+  const mo = new MutationObserver(() => scan());
+  mo.observe(document.documentElement, { childList: true, subtree: true });
+  scan();
+  setInterval(scan, 1500);
+})();
+</script>
