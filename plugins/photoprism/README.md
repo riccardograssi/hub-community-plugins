@@ -17,3 +17,9 @@ plugin-mcp
 
 `src/publish.sh` builds `ghcr.io/riccardograssi/photoprism:hub` and pushes it.
 Hub installs that tag. Set `PHOTOPRISM_ADMIN_PASSWORD` on the site before install.
+
+People groups are not part of PhotoPrism. The same `:hub` image starts a second
+process, `photoprism-groups`, which keeps `people-groups.json` in the storage
+volume. `:hub-web` adds the Gruppi button on the library page and proxies
+`/__hub/people-groups`. A group photo is one where at least two members appear
+together. The PhotoPrism command itself is unchanged.
