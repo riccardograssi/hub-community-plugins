@@ -1,36 +1,39 @@
 server {
   listen 80;
   server_name _;
-  addition_types text/html;
+  # PhotoPrism refuses iframes. Hub is the frame, so those headers stay here.
+  proxy_hide_header Content-Security-Policy;
+  proxy_hide_header X-Frame-Options;
+  # Docker DNS. A variable proxy_pass is resolved on use, so a missing
+  # groups upstream does not stop nginx from starting.
+  resolver 127.0.0.11 valid=30s ipv6=off;
+
   location /__hub/people-groups {
-    proxy_pass __GROUPS__;
+    set $groups_upstream __GROUPS__;
+    proxy_pass $groups_upstream;
     proxy_http_version 1.1;
     proxy_set_header Host $host;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
   }
-  location = /people-groups-inject.html {
-    internal;
-    root /usr/share/nginx/html;
-  }
-  location /api/ {
-    proxy_pass __UPSTREAM__;
-    proxy_set_header Host $host;
-    proxy_set_header Authorization $http_authorization;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
-  }
-  location /ui/ {
-    proxy_pass __UPSTREAM__/;
-    proxy_set_header Host $host;
-    proxy_set_header Authorization $http_authorization;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
-    proxy_set_header Accept-Encoding "";
-    add_after_body /people-groups-inject.html;
-  }
+
   location / {
-    root /usr/share/nginx/html;
-    try_files $uri $uri/ /index.html;
+    # PhotoPrism live updates use /api/v1/ws. Upgrade is hop-by-hop, so it
+    # stays "close" on ordinary requests and becomes "upgrade" only then.
+    set $connection_upgrade "close";
+    if ($http_upgrade != "") {
+      set $connection_upgrade "upgrade";
+    }
+    proxy_pass __UPSTREAM__;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header Authorization $http_authorization;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection $connection_upgrade;
+    proxy_set_header Accept-Encoding "";
+    proxy_read_timeout 3600s;
+    proxy_buffering off;
   }
 }

@@ -14,19 +14,79 @@
   <p id="status">Accesso Hub…</p>
   <script>
     (function () {
+      var status = document.getElementById("status");
+      var parts = (location.pathname || "").split("/").filter(Boolean);
+      var pluginId = parts[0] === "p" && parts[1] ? parts[1] : "photoprism";
+      var appId = pluginId.split("--")[0] || "photoprism";
+
+      function readCookie(name) {
+        var jar = (document.cookie || "").split(";");
+        var key = name + "=";
+        for (var i = 0; i < jar.length; i++) {
+          var part = jar[i].replace(/^\s+/, "");
+          if (part.indexOf(key) === 0) {
+            try { return decodeURIComponent(part.slice(key.length)); }
+            catch (e) { return part.slice(key.length); }
+          }
+        }
+        return "";
+      }
+
+      function codeFromName() {
+        try {
+          var raw = window.name || "";
+          if (raw.indexOf("homelab_sso:") !== 0) return "";
+          var data = JSON.parse(raw.slice("homelab_sso:".length));
+          if (!data || !data.code) return "";
+          if (data.app_id && data.app_id.split("--")[0] !== appId) return "";
+          return data.code;
+        } catch (e) {
+          return "";
+        }
+      }
+
+      function openLibrary(token) {
+        sessionStorage.setItem("hub_sso", token);
+        var frame = document.createElement("iframe");
+        frame.src = "ui/";
+        document.body.textContent = "";
+        document.body.appendChild(frame);
+      }
+
       var query = new URLSearchParams(location.search);
       var hash = new URLSearchParams((location.hash || "").replace(/^#/, ""));
-      var token = query.get("sso") || hash.get("sso") || "";
-      var status = document.getElementById("status");
-      if (!token) {
+      var ready = query.get("sso") || hash.get("sso") || sessionStorage.getItem("hub_sso") || "";
+      if (ready) {
+        openLibrary(ready);
+        return;
+      }
+
+      var code = query.get("sso_code")
+        || codeFromName()
+        || sessionStorage.getItem("homelab_sso_pending_" + appId)
+        || readCookie("homelab_sso_" + pluginId)
+        || readCookie("homelab_sso_" + appId)
+        || "";
+      if (!code) {
         status.textContent = "Manca il token SSO di Hub.";
         return;
       }
-      sessionStorage.setItem("hub_sso", token);
-      var frame = document.createElement("iframe");
-      frame.src = "/ui/";
-      document.body.textContent = "";
-      document.body.appendChild(frame);
+
+      fetch("api/auth/sso/browser-exchange", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ code: code, app_id: appId })
+      }).then(function (response) {
+        if (!response.ok) throw new Error("exchange");
+        return response.json();
+      }).then(function (body) {
+        var token = body && (body.access_token || body.token) || "";
+        if (!token) throw new Error("token");
+        openLibrary(token);
+      }).catch(function () {
+        status.textContent = "Accesso Hub non riuscito.";
+      });
     })();
   </script>
 </body>

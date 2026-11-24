@@ -18,4 +18,6 @@ ENV HUB_SSO=1 \
     HUB_SSO_PATH=/api/auth/sso \
     PLUGIN_NAME=photoprism \
     PLUGIN_API_BASE=http://127.0.0.1:2342 \
-    PLUGIN_HEALTH_PATH=/api/v1/status
+    PLUGIN_HEALTH_PATH=/api/v1/status \
+    PHOTOPRISM_AUTH_MODE=public \
+    PHOTOPRISM_DISABLE_TLS=true
